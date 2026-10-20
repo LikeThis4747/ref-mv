@@ -57,7 +57,7 @@ MV roughness -> Ref roughness
 | `third_party/ref_gaussian/scene/__init__.py` | 分离 `load_model_path` 与输出 `model_path` | 10–15 | 8–12 |
 | `third_party/ref_gaussian/scene/gaussian_model.py` | `gs_feature` 初始化、getter、optimizer、clone/split/prune | 45–65 | 20–30 |
 | `third_party/ref_gaussian/gaussian_renderer/__init__.py` | `render_surfel()` 的 feature-only 返回和 A/M/R override | 30–45 | 8–15 |
-| `third_party/ref_gaussian/train.py` | 可选 joint runtime、多视角 loss、统计/step/save/eval 接点 | 100–150 | 50–80 |
+| `third_party/ref_gaussian/train.py` | 可选 joint runtime、多视角 loss、统计/step/save/validation 接点 | 100–150 | 50–80 |
 | `third_party/mvinverse/mvinverse/models/mvinverse.py` | DINO 最终 token residual 与可选 detached 统计入口 | 16–24 | 8–12 |
 | `ref_mv/config.py` | joint 参数、模式与路径校验 | 70–100 | 0 |
 | `ref_mv/loaders.py` | 完整 Ref iteration 与 MV checkpoint 加载/冻结 | 80–120 | 0 |
@@ -565,7 +565,7 @@ atomic_torch_save(joint_state, joint_checkpoint_path)
 
 ## 12. 实现前只需提供的运行参数
 
-以下不是架构未决项，不阻塞编码与单元测试：
+以下不是架构未决项，不阻塞编码与自动化验证：
 
 - `ref_model_path + ref_iteration`（`saved-surfel` 模式）；
 - MV checkpoint 路径或 Hugging Face repo id；
