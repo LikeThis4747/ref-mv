@@ -1,0 +1,7 @@
+[submodule "third_party/mvinverse"]
+	path = third_party/mvinverse
+	url = https://github.com/LikeThis4747/mvinverse.git
+
+[submodule "third_party/ref_gaussian"]
+	path = third_party/ref_gaussian
+	url = https://github.com/fudan-zvg/ref-gaussian.git
