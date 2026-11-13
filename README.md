@@ -53,6 +53,7 @@ scripts/check_environment.sh
 
 ## 开始阅读
 
+0. `docs/WINDOWS_MIGRATION.md`：Windows 迁移、完整 clone、环境重建和 AI 交接说明。
 1. `AGENTS.md`：AI 工作边界。
 2. `docs/README.md`：文档导航、日期命名和归档规则。
 3. `docs/STATUS.md`：当前状态和下一步。
