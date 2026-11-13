@@ -1,11 +1,13 @@
 # 短期记忆
 
-## 2026-10-14
+## 2026-10-27
 
-- 当前项目是独立的 Ref-Gaussian × MVInverse 工作区。
-- 当前只完成环境和目录框架，没有正式连接代码和训练。
-- 下一步是只读核对 token、feature rasterization、renderer 和梯度路径。
-- 未确认的内容必须放在 `docs/discussions/`，不要写入 `DECISIONS.md`。
+- 首轮联合闭环已运行；针对 `N=2` 四次 rasterization 和未使用 heads 的两项优化已经完成代码实现，尚未重新运行。
+- renderer 沿原边界拆为 `rasterize_surfel`/`shade_surfel`，默认 Ref wrapper 保留；joint 在 densification 结束后复用同一次 rasterization。
+- joint 只执行 MVInverse A/M/R heads；MVInverse 默认五输出路径保持不变。
+- 默认工作流是先完成 Ref iteration 20000，再固定 Gaussian topology 启动 joint；开发副本 `densify_until_iter=20000`。
+- 当前唯一实施依据是 `docs/IMPLEMENTATION_PLAN.md` 指向的 2026-10-27 日期化方案；历史讨论、旧方案和性能报告只作证据。
+- 下一步由用户从 Ref 20000 saved iteration 运行，比较速度、显存和运行时行为；不由 AI 启动训练或实验。
 
 ## 使用规则
 

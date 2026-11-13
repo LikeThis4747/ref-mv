@@ -24,14 +24,27 @@
 
 - 项目自有文档默认使用中文；代码标识、文件路径、公式、论文标题和必要的英文技术术语保留原文，避免改变其准确含义。
 - `README.md`：给人看的项目入口和快速说明。
+- `docs/README.md`：文档目录、生命周期和留痕规则。
 - `docs/STATUS.md`：当前阶段、下一步和阻塞项，保持短小。
 - `docs/DECISIONS.md`：只记录已经确认的决定及其依据。
 - `docs/REFERENCE.md`：稳定的论文、源码和接口事实；待验证内容必须标注。
-- `docs/IMPLEMENTATION_PLAN.md`：当前已确认方案对应的精简代码实施计划；设计改变时同步更新，不记录逐轮聊天。
-- `docs/GROUP_MEETING_PROPOSAL.md`：面向组会汇报的精简方案说明。
-- `docs/discussions/`：原话、分析、候选方案和未决问题。
-- `docs/memory/`：带日期的短期/长期工作记忆；过期内容移入其 `archive/`。
-- `docs/archive/`：历史讨论和废弃方案，不作为默认当前依据。
+- `docs/IMPLEMENTATION_PLAN.md`：当前方案和历史方案的索引，不再直接承载会被覆盖的方案正文。
+- `docs/plans/`：当前有效的日期化方案正文；实质变更必须新建 `YYYY-MM-DD-topic.md`。
+- `docs/GROUP_MEETING_PROPOSAL.md`：日期化组会方案的兼容索引；旧正文进入 `docs/archive/proposals/`。
+- `docs/discussions/`：按日期保留原话、分析、候选方案和未决问题；结论确定后也不删除讨论过程。
+- `docs/reports/`：日期化的实现或实验结果记录，必须明确已验证与未验证范围。
+- `docs/memory/`：当前短期/长期工作记忆；旧版进入其 `archive/`，不删除或静默覆盖。
+- `docs/archive/`：被替代方案、历史状态和决定快照，只用于回溯，不作为默认当前依据。
+
+## 文档与记忆留痕
+
+- 已发布的日期化讨论、方案、报告和归档正文视为历史记录，默认只读；需要修订时新建日期化文件，并在索引中说明替代关系。
+- 新方案确认后先保留旧方案原文到 `docs/archive/plans/`，再更新 `docs/IMPLEMENTATION_PLAN.md` 的当前指针。禁止用新方案正文直接覆盖旧方案。
+- 更新 `docs/STATUS.md`、`docs/memory/short-term.md` 或其他可变摘要前，若旧内容代表一个可辨识阶段，先存入对应归档目录。
+- `docs/DECISIONS.md` 采用追加式记录。决定变化时新增修订、撤回或替代条目并引用旧编号，不静默改写历史含义。
+- `docs/memory/long-term.md` 按日期追加；过期结论保留原记录并追加失效说明。记忆不是第二套真相，冲突时以当前方案和未被撤回的决定为准。
+- 归档文件名使用 `YYYY-MM-DD-topic.md`；同日多份文件使用可理解的主题后缀。
+- 发现误覆盖时优先从 Git、历史对象或工作记录恢复原文；无法原样恢复必须明确标注来源和缺失范围，不得伪装成原始记录。
 
 ## 实验与验证
 
@@ -44,4 +57,5 @@
 
 - 临时文件先放 `ai-workspace/`，确认有长期价值后再整理到 `ref_mv/`、`third_party/` 的明确修改点或 `docs/`。
 - 不把日志、checkpoint、数据集或自动生成的大文件放入 `docs/`。
-- 修改规范时同步更新 `docs/STATUS.md` 或 `docs/DECISIONS.md`，不要复制出平行版本。
+- 修改工作区规范时在 `docs/DECISIONS.md` 追加决定，并同步更新 `docs/README.md`；历史版本按归档规则保留。
+- 当前入口只保留一个，日期化历史可以有多份；索引必须明确哪一份是当前有效版本。

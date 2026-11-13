@@ -1,26 +1,40 @@
 # 当前状态
 
-更新时间：2026-10-20
+更新时间：2026-10-27
 
 ## 阶段
 
-阶段 1 已结束：首轮连接接口、训练边界、两种启动方式、保存语义和验收顺序已经冻结，可以进入实现。初版沿用 Ref 原训练流程，不额外冻结 Ref，也不关闭其 densification/pruning；新增 feature 只接入已有 topology 更新。多视角采用 anchor 加预计算 top-K 相机邻居。
+首轮 Ref-MV 联合闭环已经实现并完成首次实际运行。针对首次运行暴露的重复计算，
+2026-10-27 性能优化方案已经完成代码实现，尚未由用户重新运行。
 
-两个上游开发副本已经复制到 `third_party/`，`ref_mv/`、`configs/`、`scripts/` 和 `tests/` 已建立。`ref-mv` 与开发副本 MVInverse 已重新 editable install；从项目根目录运行环境检查时，Ref renderer、MVInverse、rasterizer、raytracing 和 cubemapencoder 均确认从开发副本加载，CUDA 设备为 RTX A6000。当前没有联合模型代码，也没有启动训练。
+默认工作流已经调整为：先按原 Ref 流程训练到 iteration 20000，再从该完整 saved
+iteration 启动 joint。开发副本的 `densify_until_iter` 默认值已改为 20000，joint
+阶段默认固定 Gaussian topology；原始上游目录未修改。
 
-## 当前方案
+## 当前有效方案
 
-首轮使用 `C=1` 的零初始化显式 Gaussian feature，经 Ref 原 rasterizer 得到 alpha-premultiplied 二维 map，再用 `14×14` convolution 转为 1024 维 patch tokens，在 DINO 最终 `hidden_patches` 后直接相加。MVInverse 保持冻结，Ref 按原流程继续训练和 densify/prune；MV A/M/R 替换 surfel 的 `albedo/refl_strength/roughness`，并保留原 surfel shading 公式。
+- `C=1` Gaussian feature，经 Ref rasterization 和 `14x14` patch convolution 注入冻结 MVInverse。
+- `N=2`，随机 anchor 加相机中心距离 top-K 邻居；所有视角使用 Ref 原 RGB/regularization loss。
+- MV A/M/R 对应 Ref 的 `albedo/refl_strength/roughness`，Ref surfel shading 公式不变。
+- Ref PLY 与 joint 状态分开保存；输入 Ref 目录与 joint 输出目录分离。
+- renderer 已按原边界拆为 `rasterize_surfel`、`shade_surfel` 和兼容 wrapper `render_surfel`。
+- iteration 达到 `densify_until_iter` 后，joint 每个视角只执行一次 rasterization；更早的从头 joint 仍保留第二次完整 render 供原 densification 统计使用。
+- joint 只请求 MVInverse 的 A/M/R heads；不传 `output_names` 的原 MVInverse 路径仍返回五项。
+
+方案索引见 `docs/IMPLEMENTATION_PLAN.md`，当前正文见
+`docs/plans/2026-10-27-renderer-mvinverse-performance-optimization.md`；首次性能证据见
+`docs/discussions/2026-10-23-joint-training-performance-analysis.md`，实施记录见
+`docs/reports/2026-10-27-performance-optimization-implementation.md`。
 
 ## 下一步
 
-1. 按 `docs/IMPLEMENTATION_PLAN.md` 的顺序实现相机、Gaussian topology、renderer 和 MV residual 的最小接口及回归测试。
-2. 实现联合模型、采样、完整 saved iteration 加载、输入/输出目录分离和 joint checkpoint。
-3. 先通过 `C=1,N=1` 两步梯度与短程 overfit，再验证 `C=1,N=2`；通过前不启动长训练。
+1. 用户用 Ref 20000 saved iteration 重新运行 joint，比较实际单轮时间和峰值显存。
+2. 确认输出、loss 和梯度行为没有运行时回归。
+3. 只有本轮优化仍不足时，才讨论 MV 独立分辨率或冻结 encoder feature cache。
 
-## 当前禁止事项
+## 当前边界
 
-- 不修改 `/home/disk9/wsq/ENVS/mvinverse` 或 `/home/disk9/wsq/ENVS/ref-gaussian` 原始基线；修改只进入 `third_party/` 开发副本。
-- 不把旧 FIPT/V6 方案直接当作 Ref+MV 方案。
-- 不在相机、renderer 回归和梯度 smoke test 通过前启动长训练、densification 或大规模数据迁移。
-- 不在未核对基线已有实现、且未明确标注为新增候选的情况下引入新的对齐、融合或训练方法。
+- 不修改 `/home/disk9/wsq/ENVS/mvinverse` 或 `/home/disk9/wsq/ENVS/ref-gaussian` 原始基线。
+- 不改变 Ref loss、PBR 公式、相机采样、checkpoint 格式或 CUDA rasterizer。
+- 不提前实现独立 MV 分辨率、encoder cache、低频 joint step 或新的训练框架。
+- 任何新增假设先汇报并确认，不基于未确认假设继续编码。

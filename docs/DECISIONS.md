@@ -18,13 +18,13 @@
 
 - 日期：2026-10-14
 - 状态：已确认
-- 项目文档统一放在 `docs/` 的对应位置，不在根目录复制多套说明；根目录只保留必要入口文件以及已确认的 `ref_mv/`、`third_party/`、`configs/`、`scripts/`、`tests/` 代码结构。
+- 项目文档统一放在 `docs/` 的对应位置，不在根目录复制多套说明；根目录只保留必要入口文件以及已确认的 `ref_mv/`、`third_party/` 和 `configs/` 代码结构。本轮不新增自动化测试或实验脚本。
 
-## D-004：先讨论和验证，再实现
+## D-004：先讨论确认，再实现
 
 - 日期：2026-10-14
 - 状态：已确认
-- 在 feature 投影、token 注入、冻结边界、renderer 和 RGB loss 尚未明确前，不把候选闭环写成正式架构，也不启动长实验。
+- 在 feature 投影、token 注入、冻结边界、renderer 和 RGB loss 尚未明确前，不把候选闭环写成正式架构，也不启动训练或实验。
 
 ## D-005：记忆按短期/长期分层
 
@@ -62,16 +62,17 @@
 - 日期：2026-10-16
 - 状态：部分撤回（2026-10-19）
 - 仍保留：每轮使用 `N` 个训练相机，分别 splat feature，一次送入 MVInverse，并对全部 `N` 个输出视角执行 Ref surfel rendering；各视角 RGB loss 求平均后统一反传。
-- 先用 `N=1` 做完整链路 smoke 实验，再用 `N=2` 验证跨视角路径；正式 `N` 根据显存实验决定。
+- 本阶段只实现多视角训练能力，不预先启动 `N=1`、`N=2` 或正式训练；实际运行顺序和正式 `N` 由用户后续安排。
 - 已撤回：相机不再默认完全随机选取。最终由 D-015 确认为先随机选 anchor，再从按相机中心距离预计算的 top-K 邻域中选择其余视角。
 
 ## D-010：复用 Ref 的 `-r` 缩放并最小裁切到 14 的倍数
 
 - 日期：2026-10-16
+- 修订：2026-10-23，明确未被当前路径使用的 `refl_mask` 不纳入首轮改动
 - 状态：已确认
 - 不预处理或复制数据集，不重跑 COLMAP，也不建立第二套 joint camera；继续使用 Ref-Gaussian 原有 `-r` 分辨率缩放和内参缩放流程。
 - 在 `-r` 完成 resize 后，只从图像右侧和下侧裁掉不足 14 倍数的部分：`W14=(W//14)*14`、`H14=(H//14)*14`，每个方向最多损失 13 像素。
-- 因裁切不移动左上角坐标原点，已缩放的 `K` 以及 `R/T` 保持不变；RGB、mask 等所有像素张量执行相同裁切。
+- 因裁切不移动左上角坐标原点，已缩放的 `K` 以及 `R/T` 保持不变；联合路径实际使用的 RGB/alpha 执行相同裁切。当前未被训练或 loss 读取的 `refl_mask` 保留上游行为，不做无关修改。
 - 必须使用裁后 `H14/W14` 与原 `K` 更新 `HWK`，由 `fx/fy` 和裁后尺寸重算 `FoVx/FoVy`，并重建 `projection_matrix/full_proj_transform`。不能只裁图像而保留旧投影参数。
 
 ## D-011：按 Ref 原计算边界拆出 rasterization 与 shading
@@ -79,7 +80,7 @@
 - 日期：2026-10-16
 - 状态：初版已撤回（2026-10-20）
 - 原方案能让每个视角只 rasterize 一次，但需要较大范围移动 `render_surfel()` 代码。初版优先降低基线改动与回归风险，暂不拆函数。
-- 初版只给原 `render_surfel()` 增加可选的 `gaussian_feature`、`material_maps` 和 `return_deferred`：第一次返回可微 `gs_feature`，第二次仍走原函数并在 shading 前覆盖 A/M/R。
+- 初版只给原 `render_surfel()` 增加可选的 `gaussian_feature`、`material_maps` 和 `return_gs_feature`：第一次返回可微 `gs_feature`，第二次仍走原函数并在 shading 前覆盖 A/M/R。
 - 代价是每个联合视角 rasterize 两次；先实测 `N=1/2/4` 的时间与显存，确有瓶颈后再考虑拆分优化。
 - 原变量名 `base_color/albedo/refl_strength/roughness/specular/final_image` 继续保持不变。
 
@@ -101,8 +102,9 @@
 ## D-014：采用“项目包 + third_party 上游副本”目录结构
 
 - 日期：2026-10-17
+- 修订：2026-10-23，撤销本轮新增实验脚本和自动化测试的计划
 - 状态：已确认
-- 根目录使用 `ref_mv/` 存放本项目联合代码，使用 `third_party/ref_gaussian/` 与 `third_party/mvinverse/` 存放可修改的上游开发副本；`configs/`、`scripts/`、`tests/` 分别存放实验配置、命令入口和回归测试。
+- 根目录使用 `ref_mv/` 存放本项目联合代码，使用 `third_party/ref_gaussian/` 与 `third_party/mvinverse/` 存放可修改的上游开发副本；`configs/` 只存放正式入口需要的最小配置。本轮不新增实验脚本或自动化测试。
 - `third_party/UPSTREAMS.md` 记录两个副本的来源、基准 commit 和本地修改清单；原始 `/home/disk9/wsq/ENVS/ref-gaussian` 与 `/home/disk9/wsq/ENVS/mvinverse` 不做任何修改。
 - 根目录 `train.py` 作为唯一正式联合训练入口，避免从不同上游子目录启动造成导入和相对路径混乱。
 
@@ -127,10 +129,34 @@
 ## D-017：冻结首轮实现方案并分离输入输出目录
 
 - 日期：2026-10-20
+- 修订：2026-10-23，删除不必要的两套启动模式，统一为 `render_surfel -> joint_surfel` 替换规则
 - 状态：已确认
 - `docs/IMPLEMENTATION_PLAN.md` 冻结为首轮实现依据；除 checkpoint 路径、输出目录、两个新增学习率、邻居 K 和正式 N 等运行参数外，不在编码阶段临时改变模型连接、loss、冻结范围或 renderer 公式。
-- 支持 `saved-surfel` 与 `after-initial` 两种启动方式，均使用 Ref 的绝对迭代号和同一个 joint surfel step；后一方式在 initial 后跳过 volume stage，直接进入 joint surfel。
-- Ref 输入 saved iteration 与 joint 输出目录必须分离，联合训练不得覆盖基线结果。验证和可视化在 joint 阶段也必须走 conditioned renderer。
-- MVInverse 显式 `requires_grad_(False)` 且保持 `eval()`；Ref 不额外冻结，因此测试预期不能写成“只有新增参数获得梯度”。
-- 自动化验证采用最小必要集并全部放入根目录 `tests/`，不得混入训练代码或实验脚本；只保护新增接口、上游默认行为、Gaussian topology 对齐和端到端梯度链。
-- 短程 overfit、跨视角行为、显存和视觉质量统一称为“实验验证”，入口放在 `scripts/experiments/`，不由 pytest 启动。联合新增代码用 `holdout/validation` 表示训练外评估，不新增含混的 `test` 命名；上游已有命名仅为兼容保留。
+- 不实现 `saved-surfel`/`after-initial` 两套模式或额外状态机。唯一切换规则是：原 Ref 循环选择 `render_surfel` 时改走 `joint_surfel`，`render_initial` 与 `render_volume` 不变。
+- 使用入口只有参数差异：可以加载已经跑过 surfel 的完整 Ref saved iteration 后直接 joint；也可以从头跑 initial，并由训练命令设置 `volume_render_until_iter=0`，使 initial 后自然进入 joint surfel。代码不专门控制或重写 volume stage。
+- Ref 输入 saved iteration 与 joint 输出目录必须分离，联合训练不得覆盖基线结果。上游训练期间定期渲图、计算 PSNR 和保存图像的逻辑，在 joint 阶段也必须使用 conditioned renderer。
+- MVInverse 显式 `requires_grad_(False)` 且保持 `eval()`；Ref 不额外冻结。
+- 本轮只负责生产代码实现，不新增自动化测试、实验脚本、短程训练、额外评估或观测日志，也不为测试便利改造生产代码。代码完成后的训练和实验由用户另行安排。
+- 上游已有的 `testing_iterations`、`getTestCameras()` 等命名、调用位置和行为原样保留，不另造一套训练外评估概念或重命名。
+- joint 状态固定保存为 `point_cloud/iteration_<I>/joint.pt`；仅在用户显式提供 `joint_checkpoint` 时恢复，否则创建新的 joint 参数，不根据文件是否存在猜测续训意图。
+- 2026-10-23 过度实现审查后，首轮不创建 config/loaders/trainer/checkpoint 分层，不增加 MV token 统计 side-channel、复杂 checkpoint 元数据、额外测试相机分组和额外计数；联合逻辑集中在 `ref_mv/joint.py`，只保留跑通闭环所需接口。
+
+## D-018：从 Ref 20000 启动 joint 时固定 Gaussian topology
+
+- 日期：2026-10-27
+- 状态：已确认
+- 项目默认工作流是先完成 gardenspheres 原始 Ref 20000 轮训练，再从该 saved iteration 启动 joint；joint 不继续执行原默认值 25000 所隐含的额外 densification。
+- 开发副本将 `densify_until_iter` 默认值设为 20000。原始 Ref 的判断为 `iteration < densify_until_iter`，因此从 20000 saved iteration 加载后 topology 保持固定。
+- 从头训练 Ref 时仍完整保留 20000 轮之前的原 densify/clone/split/prune 流程；此决定不是关闭 Ref densification。
+- `HAS_RESET0` 改为每轮在 densification 判断之前初始化，避免直接从 20000 或更晚 iteration 加载时依赖旧循环状态。
+- 原始上游目录不修改；改动仅存在于 `third_party/ref_gaussian/` 开发副本。
+
+## D-019：文档、方案和记忆采用日期化留痕与归档
+
+- 日期：2026-10-27
+- 状态：已确认
+- 讨论、方案、阶段状态和记忆不得因出现新版而删除；旧版保留原文并按日期归档，以便沿历史记录回溯设计与实现问题。
+- `docs/IMPLEMENTATION_PLAN.md` 改为唯一方案索引；当前方案正文放在 `docs/plans/YYYY-MM-DD-topic.md`，被替代方案放在 `docs/archive/plans/`。
+- `docs/STATUS.md` 仍是简短的当前快照，但阶段切换前保存到 `docs/archive/status/`。`docs/DECISIONS.md` 采用追加式修订，重大整理前可保存决定快照。
+- 短期和长期记忆继续分层；旧记忆进入 `docs/memory/archive/`，不得静默覆盖。长期记忆按日期追加，失效内容通过新记录说明。
+- 本决定只替代 D-003、D-005 和 D-017 中“当前文件可直接原地更新”的文档管理含义，不改变其中的代码结构、训练边界和已确认实现方案。

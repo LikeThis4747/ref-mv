@@ -1,7 +1,7 @@
 # Ref-Gaussian × MVInverse 方向讨论
 
-状态：已于 2026-10-20 收敛并冻结。正式实现以 `docs/IMPLEMENTATION_PLAN.md` 和 `docs/DECISIONS.md` 为准；本文件保留讨论背景，不再作为未决方案继续扩展。  
-更新日期：2026-10-20
+状态：已于 2026-10-20 收敛并冻结，2026-10-23 澄清启动入口不构成两套模式。正式实现以 `docs/IMPLEMENTATION_PLAN.md` 和 `docs/DECISIONS.md` 为准；本文件保留讨论背景，不再作为未决方案继续扩展。
+更新日期：2026-10-23
 
 ## 2026-10-19 用户补充原话
 
@@ -128,7 +128,7 @@ MaterialRefGS 仍保留相同的 surfel 主公式；它主要增加多视角一�
 
 首轮目标是以尽量小的改动跑通完整梯度链，而不是同时修复 Ref-Gaussian 的材质分解：
 
-1. 需要兼容两种启动方式：完整训练 `render_initial + render_surfel` 后加载 saved iteration；或完成 `render_initial` 后直接进入联合 surfel 阶段。
+1. 最终不建立两套启动结构：原循环准备调用 `render_surfel` 时统一替换为 `joint_surfel`。既可加载已经跑过 surfel 的 saved iteration，也可从头跑 initial，并通过原训练参数把 volume 设为 0 后自然进入 joint。
 2. 初版不额外冻结 Ref-Gaussian，继续使用原 regularization、optimizer 和 densification/pruning；新增 feature 只接入已有 topology 更新路径。
 3. 为每个 Gaussian 增加独立显式 latent feature；不复用 SH 或 A/M/R 属性充当条件。首轮 `C=1`，随后再比较 `C=3`。
 4. 将 latent feature 可微 splat 为每个 MVInverse 输入视角的二维 feature map。

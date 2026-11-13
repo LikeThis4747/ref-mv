@@ -17,3 +17,6 @@ checkpoints/
 outputs/
 runs/
 wandb/
+
+data/
+output/

@@ -13,17 +13,17 @@ Gaussian feature
     → RGB loss
 ```
 
-首轮接口与实施方案已经确认，当前仅完成仓库脚手架和环境准备，尚未实现联合模型。
+首轮联合训练已经实际运行；针对重复 rasterization 和未使用 MVInverse heads 的性能优化已完成代码实现，等待用户重新运行确认实际速度与显存。
 
 ## 目录
 
 - `ref_mv/`：本项目自己的联合逻辑。
 - `third_party/ref_gaussian/`：Ref-Gaussian 开发副本。
 - `third_party/mvinverse/`：MVInverse 开发副本。
-- `configs/`：场景与实验配置。
-- `scripts/`：环境、smoke test 和训练命令。
-- `tests/`：导入、相机、renderer 和梯度回归测试。
-- `docs/`：状态、稳定事实、决定、讨论、记忆和历史归档。
+- `configs/`：正式入口所需运行参数说明。
+- `scripts/`：已有辅助入口；本轮不新增测试或实验脚本。
+- `tests/`：保留目录；本轮未新增自动化测试。
+- `docs/`：日期化方案、状态、稳定事实、决定、讨论、记忆和历史归档。
 - `ai-workspace/`：AI 工作时使用的临时脚本和中间结果，不作为正式接口。
 
 ## 外部基线
@@ -45,13 +45,20 @@ scripts/check_environment.sh
 
 检查必须确认 Ref、MVInverse 和 CUDA 扩展均从本项目开发副本加载。
 
+## 训练入口
+
+正式入口为根目录 `train.py`。学习率、视角数和邻居数量不设研究默认值，运行前
+按 `configs/README.md` 显式提供；从已有 Ref saved iteration 启动时，输入基线目录
+必须与 joint 输出目录分开。
+
 ## 开始阅读
 
 1. `AGENTS.md`：AI 工作边界。
-2. `docs/STATUS.md`：当前状态和下一步。
-3. `docs/REFERENCE.md`：与当前任务相关的稳定事实。
-4. `docs/DECISIONS.md`：已确认决定。
-5. `docs/IMPLEMENTATION_PLAN.md`：首轮代码实施计划。
-6. `docs/discussions/`：仍在讨论的内容。
+2. `docs/README.md`：文档导航、日期命名和归档规则。
+3. `docs/STATUS.md`：当前状态和下一步。
+4. `docs/IMPLEMENTATION_PLAN.md`：当前方案与历史方案索引。
+5. `docs/REFERENCE.md`：与当前任务相关的稳定事实。
+6. `docs/DECISIONS.md`：已确认决定和修订关系。
+7. `docs/discussions/`：保留的讨论过程和未决内容。
 
-不要默认读取 `docs/archive/` 或全部记忆文件。
+日常工作不默认读取 `docs/archive/` 或全部记忆文件；需要回溯设计变化时再按索引读取对应日期版本。

@@ -4,4 +4,4 @@
 
 [submodule "third_party/ref_gaussian"]
 	path = third_party/ref_gaussian
-	url = https://github.com/fudan-zvg/ref-gaussian.git
+url = https://github.com/LikeThis4747/ref-gaussian.git
