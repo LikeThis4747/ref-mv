@@ -13,8 +13,14 @@ trap 'rm -f "$REF_LOG"' EXIT
 echo "[GPU 0] Starting original Ref training to iteration 20000"
 CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" third_party/ref_gaussian/train.py \
     -s "$DATASET" \
+    --eval \
     -r 2 \
     --iterations 20000 \
+    --indirect_from_iter 10000 \
+    --volume_render_until_iter 0 \
+    --initial 1 \
+    --init_until_iter 3000 \
+    --lambda_normal_smooth 0.45 \
     --save_iterations 20000 \
     > >(tee "$REF_LOG") 2>&1 &
 REF_PID=$!

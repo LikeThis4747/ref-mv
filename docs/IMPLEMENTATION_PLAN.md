@@ -6,6 +6,7 @@
 
 ## 当前方案
 
+- 2026-11-14：[材质 GT loss 实施方案](plans/2026-11-14-material-gt-loss.md)（增量实验功能）
 - 2026-10-27：[Renderer 与 MVInverse 性能优化方案](plans/2026-10-27-renderer-mvinverse-performance-optimization.md)
 - 状态：已实现，尚未由用户重新运行；实施记录见 [`reports/2026-10-27-performance-optimization-implementation.md`](reports/2026-10-27-performance-optimization-implementation.md)。
 
