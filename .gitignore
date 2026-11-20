@@ -20,3 +20,6 @@ wandb/
 
 data/
 output/
+
+# Local empty file left by a malformed training command.
+/--model_path
