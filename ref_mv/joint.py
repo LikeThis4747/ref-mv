@@ -1,3 +1,4 @@
+import math
 import os
 import random
 
@@ -127,15 +128,28 @@ class RefMVModel(nn.Module):
 def build_neighbor_table(cameras, neighbor_k):
     if neighbor_k < 0:
         raise ValueError(f"neighbor_k must be non-negative, got {neighbor_k}")
+    if neighbor_k == 0 or len(cameras) < 2:
+        return [[] for _ in cameras]
+
     centers = torch.stack([
         camera.camera_center.detach().cpu() for camera in cameras
     ])
-    k_eff = min(neighbor_k, len(cameras) - 1)
-    if k_eff == 0:
-        return torch.empty((len(cameras), 0), dtype=torch.long)
+    # Ref stores the camera-to-world rotation in R, with +Z pointing forward.
+    directions = torch.stack([camera.R[:, 2].detach().cpu() for camera in cameras])
+    directions = torch.nn.functional.normalize(directions, dim=1)
+    cosines = directions @ directions.T
     distances = torch.cdist(centers, centers)
-    distances.fill_diagonal_(float("inf"))
-    return distances.topk(k_eff, largest=False).indices
+
+    # PGSR-style selection: filter by angle, rank by distance, break ties by angle.
+    eligible = cosines > math.cos(math.radians(30))
+    eligible.fill_diagonal_(False)
+    by_angle = cosines.argsort(dim=1, descending=True, stable=True)
+    by_distance = distances.gather(1, by_angle).argsort(dim=1, stable=True)
+    ranked = by_angle.gather(1, by_distance)
+    return [
+        order[mask[order]][:neighbor_k].tolist()
+        for order, mask in zip(ranked, eligible)
+    ]
 
 
 class CameraSampler:
@@ -144,11 +158,21 @@ class CameraSampler:
             raise ValueError("Joint training requires at least one training camera")
         self.cameras = cameras
         self.num_views = num_views
-        self.neighbors = build_neighbor_table(cameras, neighbor_k)
-        max_views = self.neighbors.shape[1] + 1
+        max_views = min(neighbor_k + 1, len(cameras))
         if not 1 <= num_views <= max_views:
             raise ValueError(
                 f"num_views must be in [1, {max_views}] for this scene, got {num_views}"
+            )
+        self.neighbors = build_neighbor_table(cameras, neighbor_k if num_views > 1 else 0)
+        insufficient = [
+            f"{camera.image_name} ({len(neighbors)})"
+            for camera, neighbors in zip(cameras, self.neighbors)
+            if len(neighbors) < num_views - 1
+        ]
+        if insufficient:
+            raise ValueError(
+                f"Need {num_views - 1} neighbors within the 30-degree angle limit per anchor. "
+                f"Anchors with too few neighbors (available count): {', '.join(insufficient)}"
             )
         self._anchor_stack = []
 
@@ -159,7 +183,7 @@ class CameraSampler:
         anchor_index = self._anchor_stack.pop(anchor_pos)
         indices = [anchor_index]
         if self.num_views > 1:
-            candidates = self.neighbors[anchor_index].tolist()
+            candidates = self.neighbors[anchor_index]
             indices.extend(random.sample(candidates, self.num_views - 1))
         return [self.cameras[index] for index in indices]
 

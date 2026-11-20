@@ -163,7 +163,7 @@ def render_checkpoint(model_path: Path, iteration: int, camera_index: int):
             num_views = int(run_config.get("num_views", 2))
             neighbor_k = int(run_config.get("neighbor_k", 8))
             neighbor_table = build_neighbor_table(cameras, max(neighbor_k, num_views - 1))
-            neighbor_ids = neighbor_table[camera_index, : max(0, num_views - 1)].tolist()
+            neighbor_ids = neighbor_table[camera_index][: max(0, num_views - 1)]
             joint_cameras = [camera] + [cameras[i] for i in neighbor_ids]
             joint_output = joint_model(joint_cameras, pipe, background, opt)
             feature_map = joint_output["feature_maps"][0]
