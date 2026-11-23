@@ -51,9 +51,6 @@ scripts/check_environment.sh
 按 `configs/README.md` 显式提供；从已有 Ref saved iteration 启动时，输入基线目录
 必须与 joint 输出目录分开。
 
-用 `--gs_feature_dim 8` 选择每个 Gaussian 的条件特征维度。支持 `1–16` 的整数，
-默认 `1`。续训和通道预算见 [运行配置](configs/README.md)。
-
 ## 开始阅读
 
 0. `docs/WINDOWS_MIGRATION.md`：Windows 迁移、完整 clone、环境重建和 AI 交接说明。
