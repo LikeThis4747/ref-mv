@@ -47,6 +47,8 @@ def main():
     parser.add_argument("--ref_iteration", type=int, default=None)
     parser.add_argument("--joint_checkpoint", type=str, default=None)
     parser.add_argument("--mv_checkpoint", type=str, default="maddog241/mvinverse")
+    parser.add_argument("--gs_feature_dim", type=int, default=1,
+                        help="Per-Gaussian conditioning feature dimension (1–16)")
     parser.add_argument("--gs_feature_lr", type=float, default=0.001)
     parser.add_argument("--gs_patch_lr", type=float, default=5e-5)
     parser.add_argument(
@@ -59,6 +61,8 @@ def main():
     parser.add_argument("--num_views", type=int, default=2)
 
     args = parser.parse_args(sys.argv[1:])
+    if not 1 <= args.gs_feature_dim <= 16:
+        parser.error("--gs_feature_dim must be between 1 and 16 (8 of 24 rasterizer channels are reserved)")
     if (args.ref_model_path is None) != (args.ref_iteration is None):
         parser.error("--ref_model_path and --ref_iteration must be provided together")
     if args.joint_checkpoint is not None and args.ref_model_path is None:
@@ -89,6 +93,7 @@ def main():
     with open(os.path.join(args.model_path, "run_config.txt"), "a", encoding="utf-8") as log:
         log.write(f"[{datetime.now().isoformat(timespec='seconds')}]\n")
         log.write(f"command={shlex.join([sys.executable, *sys.argv])}\n")
+        log.write(f"gs_feature_dim={args.gs_feature_dim}\n")
         log.write(f"gs_feature_lr={args.gs_feature_lr}\n")
         log.write(f"gs_patch_lr={args.gs_patch_lr}\n")
         log.write(f"joint_envmap_lr={args.joint_envmap_lr}\n")
@@ -108,7 +113,7 @@ def main():
         joint_envmap_lr=args.joint_envmap_lr,
         neighbor_k=args.neighbor_k,
         num_views=args.num_views,
-        feature_dim=1,
+        feature_dim=args.gs_feature_dim,
     )
 
     print("Optimizing " + args.model_path)
