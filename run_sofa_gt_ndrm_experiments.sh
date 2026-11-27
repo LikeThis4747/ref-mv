@@ -2,14 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ "${SCRIPT_DIR}" == /mnt/f/wsl/ref-mv ]]; then
-  cd "${REF_MV_WSL_ROOT:-${HOME}/ref-mv}"
-else
-  cd "${SCRIPT_DIR}"
-fi
+cd "${SCRIPT_DIR}"
 source scripts/env.sh
 
-DATASET="/mnt/f/wsl/ref-mv/data/sofa_0511_refgaussian_sample70_blendercoords"
+DATASET="${REF_MV_ROOT}/data/sofa_0511_refgaussian_sample70_blendercoords"
 OUTPUT_ROOT="${REF_MV_ROOT}/output/sofa_0511_refgaussian_sample70_blendercoords"
 
 # 1) Skipped: an existing ref_GT_ND_r2_20k checkpoint is reused below.
