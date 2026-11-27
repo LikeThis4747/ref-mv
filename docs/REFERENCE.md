@@ -20,7 +20,7 @@
 - 已检查的 `render_surfel` 路径会 rasterize SH `base_color` 和额外 feature，再结合 `refl_strength` 与 specular 结果生成 RGB。
 - 当前活跃路径使用的是 `refl_strength`；不能未经核对就把 MVInverse metallic 直接映射到保存但未使用的 `_metalness`。
 - 当前 surfel rasterizer 的额外特征上限为 24 通道。原有材质与间接光特征占 8 通道，联合训练入口 `train.py` 的 `--gs_feature_dim` 支持 `1–16` 的整数，默认 `1`。
-- 所选维度写入 `run_config.txt` 和 `joint.pt`。从普通 Ref saved iteration 启动新联合训练时可任选维度，使用 `--joint_checkpoint` 续训时须与存档维度一致。维度大于 1 时，训练跳过单通道联合材质面板。Patch embedding 的输出仍为每个 patch 1024 维。
+- 所选维度写入 `run_config.txt` 和 `joint.pt`。从普通 Ref saved iteration 启动新联合训练时可任选维度，使用 `--joint_checkpoint` 续训时须与存档维度一致。维度大于 1 时，联合材质面板只将 GS feature 格子画黑，并照常保存 MVInverse 初始与当前材质的双排对照图。Patch embedding 的输出仍为每个 patch 1024 维。
 - Ref-Gaussian 的论文 deferred PBR 描述不能直接等同于当前 checkout 的实际 renderer；论文和代码要分开核对。
 - `GaussianModel.capture()` 不保存环境贴图或 ray-tracing mesh；完整 surfel/indirect 加载应沿用 `eval.py` 的 saved-iteration 路径，并在 indirect 模式加载同 iteration 的 mesh。
 
