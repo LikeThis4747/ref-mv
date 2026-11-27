@@ -41,6 +41,12 @@ def main():
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
     parser.add_argument("--start_checkpoint", type=str, default=None)
+    parser.add_argument(
+        "--experiment_name",
+        type=str,
+        default="joint",
+        help="Short label used after the automatic timestamp in the output folder",
+    )
 
     # Joint defaults reuse the closest upstream learning-rate scales.
     parser.add_argument("--ref_model_path", type=str, default=None)
@@ -74,6 +80,13 @@ def main():
             "Ref-MV restores Ref state from --ref_model_path/--ref_iteration; "
             "--start_checkpoint is not a joint restore path"
         )
+    if (
+        not args.experiment_name.strip()
+        or args.experiment_name in {".", ".."}
+        or "/" in args.experiment_name
+        or "\\" in args.experiment_name
+    ):
+        parser.error("--experiment_name must be a non-empty folder name without path separators")
 
     args.save_iterations.append(args.iterations)
     args.test_iterations = args.test_iterations + [
@@ -85,7 +98,7 @@ def main():
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         scene_name = os.path.basename(os.path.normpath(args.source_path))
         args.model_path = os.path.join(
-            "./output", scene_name, f"{current_time}-{scene_name}"
+            "./output", scene_name, f"{current_time}-{args.experiment_name.strip()}"
         )
     if args.ref_model_path is not None:
         if os.path.abspath(args.ref_model_path) == os.path.abspath(args.model_path):
