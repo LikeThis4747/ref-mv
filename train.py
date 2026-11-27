@@ -47,6 +47,8 @@ def main():
     parser.add_argument("--ref_iteration", type=int, default=None)
     parser.add_argument("--joint_checkpoint", type=str, default=None)
     parser.add_argument("--mv_checkpoint", type=str, default="maddog241/mvinverse")
+    parser.add_argument("--keep_ref_albedo", action="store_true",
+                        help="Use Ref albedo with MVInverse metallic and roughness")
     parser.add_argument("--gs_feature_dim", type=int, default=1,
                         help="Per-Gaussian conditioning feature dimension (1–16)")
     parser.add_argument("--gs_feature_lr", type=float, default=0.001)
@@ -103,6 +105,8 @@ def main():
 
     dataset = model_params.extract(args)
     dataset.joint_patch_size = 14
+    opt = optimization_params.extract(args)
+    opt.keep_ref_albedo = args.keep_ref_albedo
     joint_args = Namespace(
         ref_model_path=args.ref_model_path,
         ref_iteration=args.ref_iteration,
@@ -124,7 +128,7 @@ def main():
     ref_train.args = args
     ref_train.training(
         dataset,
-        optimization_params.extract(args),
+        opt,
         pipeline_params.extract(args),
         args.test_iterations,
         args.save_iterations,
